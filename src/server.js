@@ -8,6 +8,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+const path = require('path');
+app.use('/storage/public', express.static(path.join(__dirname, '..', 'storage', 'public')));
 const requireAuth = require('./middleware/requireAuth');
 const requireRole = require('./middleware/requireRole');
 
