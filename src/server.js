@@ -8,8 +8,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+const requireAuth = require('./middleware/requireAuth');
+const requireRole = require('./middleware/requireRole');
 
+app.get('/api/admin-only', requireAuth, requireRole('admin'), (req, res) => {
+  res.json({ message: `Welcome, admin ${req.user.email}` });
+});
 
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 
 const db = require('./db/connection');
 
