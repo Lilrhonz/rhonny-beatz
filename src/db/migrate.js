@@ -1,0 +1,33 @@
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const mysql = require('mysql2/promise');
+
+async function migrate() {
+  const connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    multipleStatements: true
+  });
+
+  const migrationsDir = path.join(__dirname, 'migrations');
+  const files = fs.readdirSync(migrationsDir).sort();
+
+  for (const file of files) {
+    if (!file.endsWith('.sql')) continue;
+    console.log(`Running migration: ${file}`);
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    await connection.query(sql);
+  }
+
+  console.log('All migrations complete.');
+  await connection.end();
+}
+
+migrate().catch((err) => {
+  console.error('Migration failed:', err);
+  process.exit(1);
+});
