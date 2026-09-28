@@ -1,3 +1,7 @@
 node_modules
 .env
 storage/private
+storage/public/*
+!storage/public/.gitkeep
+storage/private/*
+!storage/private/.gitkeep

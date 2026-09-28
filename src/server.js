@@ -1,38 +1,25 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
+const cors = require('cors');
+
+const authRoutes = require('./routes/authRoutes');
+const beatRoutes = require('./routes/beatRoutes');
 
 const app = express();
+
+app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
+
+// Only the public folder is reachable over HTTP. storage/private is never exposed.
+app.use('/storage/public', express.static(path.join(__dirname, '..', 'storage', 'public')));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-const path = require('path');
-app.use('/storage/public', express.static(path.join(__dirname, '..', 'storage', 'public')));
-const requireAuth = require('./middleware/requireAuth');
-const requireRole = require('./middleware/requireRole');
-
-app.get('/api/admin-only', requireAuth, requireRole('admin'), (req, res) => {
-  res.json({ message: `Welcome, admin ${req.user.email}` });
-});
-
-const beatRoutes = require('./routes/beatRoutes');
-app.use('/api/beats', beatRoutes);
-
-const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
-
-const db = require('./db/connection');
-
-app.get('/api/db-check', async (req, res) => {
-  try {
-    const [rows] = await db.query('SELECT 1 + 1 AS result');
-    res.json({ connected: true, result: rows[0].result });
-  } catch (err) {
-    res.status(500).json({ connected: false, error: err.message });
-  }
-});
+app.use('/api/beats', beatRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

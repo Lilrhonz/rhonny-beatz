@@ -13,14 +13,28 @@ async function migrate() {
     multipleStatements: true
   });
 
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      filename VARCHAR(255) PRIMARY KEY,
+      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  const [appliedRows] = await connection.query('SELECT filename FROM schema_migrations');
+  const applied = new Set(appliedRows.map((r) => r.filename));
+
   const migrationsDir = path.join(__dirname, 'migrations');
-  const files = fs.readdirSync(migrationsDir).sort();
+  const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
 
   for (const file of files) {
-    if (!file.endsWith('.sql')) continue;
+    if (applied.has(file)) {
+      console.log(`Skipping (already applied): ${file}`);
+      continue;
+    }
     console.log(`Running migration: ${file}`);
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
     await connection.query(sql);
+    await connection.query('INSERT INTO schema_migrations (filename) VALUES (?)', [file]);
   }
 
   console.log('All migrations complete.');

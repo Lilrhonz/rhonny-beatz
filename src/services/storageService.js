@@ -14,14 +14,21 @@ async function save(buffer, filename, visibility) {
   const dir = resolveDir(visibility);
   const filePath = path.join(dir, filename);
   await fs.promises.writeFile(filePath, buffer);
-  return path.join(visibility, filename); // stored "key" you save in the DB
+  return `${visibility}/${filename}`;
 }
 
 function getPath(key) {
-  // key looks like "public/cover.jpg" or "private/beat.wav"
-  const [visibility, ...rest] = key.split(path.sep === '\\' ? /\\|\// : '/');
+  const [visibility, ...rest] = key.split(/\\|\//);
   const dir = resolveDir(visibility);
   return path.join(dir, ...rest);
+}
+
+function reserve(filename, visibility) {
+  const dir = resolveDir(visibility);
+  return {
+    fullPath: path.join(dir, filename),
+    key: `${visibility}/${filename}`
+  };
 }
 
 async function remove(key) {
@@ -30,9 +37,7 @@ async function remove(key) {
 }
 
 function getSignedUrl(key, expiresInSeconds = 3600) {
-  // Placeholder for local dev — real signed URLs come when we move to cloud storage.
-  // For now, this just returns a path our own server route will handle directly.
   return `/api/downloads/${encodeURIComponent(key)}?expires=${Date.now() + expiresInSeconds * 1000}`;
 }
 
-module.exports = { save, getPath, remove, getSignedUrl };
+module.exports = { save, getPath, reserve, remove, getSignedUrl };

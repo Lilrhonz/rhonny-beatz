@@ -3,7 +3,15 @@ const router = express.Router();
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
 const upload = require('../middleware/upload');
-const { createBeat } = require('../controllers/beatController');
+const {
+  createBeat,
+  listPublishedBeats,
+  getBeatBySlug,
+  publishBeat
+} = require('../controllers/beatController');
+
+router.get('/', listPublishedBeats);
+router.get('/:slug', getBeatBySlug);
 
 router.post(
   '/',
@@ -15,5 +23,7 @@ router.post(
   ]),
   createBeat
 );
+
+router.patch('/:id/publish', requireAuth, requireRole('admin'), publishBeat);
 
 module.exports = router;
