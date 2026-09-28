@@ -17,6 +17,9 @@ app.get('/api/admin-only', requireAuth, requireRole('admin'), (req, res) => {
   res.json({ message: `Welcome, admin ${req.user.email}` });
 });
 
+const beatRoutes = require('./routes/beatRoutes');
+app.use('/api/beats', beatRoutes);
+
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 

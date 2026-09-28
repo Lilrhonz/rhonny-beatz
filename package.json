@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
- "scripts": {
-  "dev": "nodemon src/server.js",
-  "migrate": "node src/db/migrate.js",
-  "seed:admin": "node src/db/seedAdmin.js",
-  "test": "echo \"Error: no test specified\" && exit 1"
-},
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/db/migrate.js",
+    "seed:admin": "node src/db/seedAdmin.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,6 +17,7 @@
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
     "mysql2": "^3.24.4"
   },
   "devDependencies": {
