@@ -7,7 +7,8 @@ const {
   createBeat,
   listPublishedBeats,
   getBeatBySlug,
-  publishBeat
+  publishBeat,
+  setBeatPrices
 } = require('../controllers/beatController');
 
 router.get('/', listPublishedBeats);
@@ -25,5 +26,6 @@ router.post(
 );
 
 router.patch('/:id/publish', requireAuth, requireRole('admin'), publishBeat);
+router.put('/:id/prices', requireAuth, requireRole('admin'), setBeatPrices);
 
 module.exports = router;

@@ -93,10 +93,13 @@ async function createBeat(req, res) {
 async function listPublishedBeats(req, res) {
   try {
     const [beats] = await db.query(
-      `SELECT id, title, slug, bpm, key_signature, cover_art_path, preview_path, created_at
-       FROM beats
-       WHERE status = 'published'
-       ORDER BY created_at DESC`
+      `SELECT b.id, b.title, b.slug, b.bpm, b.key_signature, b.cover_art_path, b.preview_path, b.created_at,
+        (SELECT GROUP_CONCAT(tag) FROM beat_tags WHERE beat_id = b.id) AS tags,
+        (SELECT MIN(price_cents) FROM beat_prices WHERE beat_id = b.id) AS min_price_cents,
+        (SELECT currency FROM beat_prices WHERE beat_id = b.id ORDER BY price_cents ASC LIMIT 1) AS currency
+       FROM beats b
+       WHERE b.status = 'published'
+       ORDER BY b.created_at DESC`
     );
     res.json(beats);
   } catch (err) {
@@ -104,7 +107,6 @@ async function listPublishedBeats(req, res) {
     res.status(500).json({ error: 'Failed to load beats' });
   }
 }
-
 async function getBeatBySlug(req, res) {
   try {
     const [rows] = await db.query(
@@ -151,9 +153,44 @@ async function publishBeat(req, res) {
   }
 }
 
+async function setBeatPrices(req, res) {
+  try {
+    const beatId = req.params.id;
+    const { currency = 'GHS', prices } = req.body;
+
+    if (!Array.isArray(prices) || prices.length === 0) {
+      return res.status(400).json({ error: 'prices must be a non-empty list' });
+    }
+
+    const [beats] = await db.query('SELECT id FROM beats WHERE id = ?', [beatId]);
+    if (beats.length === 0) {
+      return res.status(404).json({ error: 'Beat not found' });
+    }
+
+    for (const p of prices) {
+      const amount = Number(p.price);
+      if (!Number.isInteger(p.tier_id) || !(amount >= 0)) {
+        return res.status(400).json({ error: 'Each price needs a tier_id and a valid price' });
+      }
+      await db.query(
+        `INSERT INTO beat_prices (beat_id, tier_id, price_cents, currency)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE price_cents = VALUES(price_cents), currency = VALUES(currency)`,
+        [beatId, p.tier_id, Math.round(amount * 100), currency]
+      );
+    }
+
+    res.json({ message: 'Prices saved' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to save prices' });
+  }
+}
+
+
 function getExt(filename) {
   const parts = filename.split('.');
   return parts.length > 1 ? `.${parts[parts.length - 1]}` : '';
 }
 
-module.exports = { createBeat, listPublishedBeats, getBeatBySlug, publishBeat };
+module.exports = { createBeat, listPublishedBeats, getBeatBySlug, publishBeat, setBeatPrices };

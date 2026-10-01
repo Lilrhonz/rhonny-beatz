@@ -3,8 +3,10 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 
+
 const authRoutes = require('./routes/authRoutes');
 const beatRoutes = require('./routes/beatRoutes');
+//const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 
@@ -20,6 +22,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/beats', beatRoutes);
+//app.use('/api/orders', orderRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
