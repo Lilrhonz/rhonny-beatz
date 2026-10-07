@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { API_URL, fileUrl, formatPrice } from '../config';
+import { useToast } from './Toast';
 
 // Generic, industry-standard usage terms shown per tier name.
 // Edit freely to match whatever your brother actually offers.
@@ -14,6 +15,20 @@ export default function LicenseModal({ beatSlug, cart, onAdd, onClose }) {
   const [beat, setBeat] = useState(null);
   const [error, setError] = useState(false);
   const [openTier, setOpenTier] = useState(null);
+    const showToast = useToast();
+
+function TERMS_BY_TIER_SOURCE(tierName) {
+  return TERMS_BY_TIER[tierName] || [];
+}
+
+
+  function copyTerms(tier, beatTitle) {
+    const terms = TERMS_BY_TIER_SOURCE(tier.name).join('\n- ');
+    const text = `${beatTitle} — ${tier.name} License\n\n- ${terms}`;
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('License terms copied!'))
+      .catch(() => showToast("Couldn't copy."));
+  }
 
   useEffect(() => {
     fetch(`${API_URL}/api/beats/${beatSlug}`)
@@ -54,8 +69,12 @@ export default function LicenseModal({ beatSlug, cart, onAdd, onClose }) {
               <div>
                 <h2>{beat.title}</h2>
                 <p>{beat.bpm ? `${beat.bpm} BPM` : ''} {beat.key_signature ? `· ${beat.key_signature}` : ''}</p>
+
+            
               </div>
             </div>
+
+            
 
             <div className="tiers">
               {prices.length === 0 && <p className="notice">This beat has no prices yet.</p>}
@@ -88,8 +107,17 @@ export default function LicenseModal({ beatSlug, cart, onAdd, onClose }) {
                             currency: tier.currency
                           })
                         }
+                        
                       >
                         🛍 {inCart ? 'In cart' : formatPrice(tier.price_cents, tier.currency)}
+                      </button>
+                                            <button
+                        type="button"
+                        className="copy-terms-btn"
+                        onClick={() => copyTerms(tier, beat.title)}
+                        title="Copy license terms"
+                      >
+                        ⧉
                       </button>
                     </div>
 

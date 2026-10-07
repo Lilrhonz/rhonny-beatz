@@ -1,4 +1,5 @@
 import { fileUrl } from '../config';
+import AudioVisualizer from './AudioVisualizer';
 
 function formatTime(seconds) {
   if (!isFinite(seconds)) return '0:00';
@@ -9,7 +10,7 @@ function formatTime(seconds) {
 
 export default function PlayerBar({
   beat, isPlaying, current, duration, repeatOne,
-  onToggle, onSeek, onPrev, onNext, onToggleRepeat
+  onToggle, onSeek, onPrev, onNext, onToggleRepeat, audioRef
 }) {
   if (!beat) return null;
 
@@ -28,6 +29,8 @@ export default function PlayerBar({
         </button>
         <button className="player-side" onClick={onNext} aria-label="Next">⏭</button>
       </div>
+
+      <AudioVisualizer audioRef={audioRef} isPlaying={isPlaying} />
 
       <span className="time">{formatTime(current)}</span>
       <input

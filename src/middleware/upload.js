@@ -7,7 +7,8 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 function fileFilter(req, file, cb) {
   const allowed = {
     coverArt: ['image/jpeg', 'image/png', 'image/webp'],
-    wavFile: ['audio/wav', 'audio/x-wav', 'audio/wave']
+    wavFile: ['audio/wav', 'audio/x-wav', 'audio/wave'],
+    coverImage: ['image/jpeg', 'image/png', 'image/webp']
   };
 
   const allowedTypes = allowed[file.fieldname];

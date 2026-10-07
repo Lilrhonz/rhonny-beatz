@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import NewsletterForm from './NewsletterForm';
+
 export default function Footer() {
   return (
     <footer className="site-footer">
@@ -6,10 +9,15 @@ export default function Footer() {
       </div>
       <p className="footer-tagline">Original beats. Real licences. No downloads without a purchase.</p>
 
+      <div className="newsletter-block">
+        <p className="newsletter-label">Get notified when new beats drop</p>
+        <NewsletterForm />
+      </div>
+
       <div className="footer-links">
         <a href="#beats">Beats</a>
-        <a href="mailto:rhonnybeatzpro@gmail.com">Contact</a>
-        <a href="#">About</a>
+                <Link to="/contact">Contact</Link>
+        <Link to="/videos">Videos</Link>
       </div>
 
       <p className="footer-copy">© {new Date().getFullYear()} Rhonny Beatz. All rights reserved.</p>

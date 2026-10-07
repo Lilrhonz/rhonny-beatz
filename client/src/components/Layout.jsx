@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import PlayerBar from './PlayerBar';
@@ -8,6 +8,9 @@ import CartDrawer from './CartDrawer';
 import AuthModal from './AuthModal';
 import { API_URL, fileUrl } from '../config';
 import { getToken, setToken, clearToken } from '../auth';
+import { loadFavorites, saveFavorites } from '../favorites';
+import { loadRecentlyPlayed, recordPlay } from '../recentlyPlayed';
+import ScrollToTop from './ScrollToTop';
 
 function loadCart() {
   try {
@@ -30,9 +33,12 @@ export default function Layout() {
   const [cartOpen, setCartOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [favorites, setFavorites] = useState(loadFavorites);
+  const [recentIds, setRecentIds] = useState(loadRecentlyPlayed);
   const audioRef = useRef(null);
+  const location = useLocation();
 
-  useEffect(() => {
+  function refreshBeats() {
     fetch(`${API_URL}/api/beats`)
       .then((res) => {
         if (!res.ok) throw new Error('Request failed');
@@ -43,6 +49,10 @@ export default function Layout() {
         setStatus('ready');
       })
       .catch(() => setStatus('error'));
+  }
+
+  useEffect(() => {
+    refreshBeats();
   }, []);
 
   useEffect(() => {
@@ -67,11 +77,30 @@ export default function Layout() {
     }
   }, [cart]);
 
+    useEffect(() => {
+    function handleKeyDown(e) {
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return; // don't hijack typing
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (currentBeat) togglePlay(currentBeat);
+      } else if (e.code === 'ArrowRight') {
+        playOffset(1);
+      } else if (e.code === 'ArrowLeft') {
+        playOffset(-1);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentBeat, beats]);
+
   function playBeat(beat) {
     const audio = audioRef.current;
     setCurrentBeat(beat);
     audio.src = fileUrl(beat.preview_path);
     audio.play();
+    setRecentIds(recordPlay(beat.id, recentIds));
   }
 
   function togglePlay(beat) {
@@ -116,6 +145,16 @@ export default function Layout() {
     setCart((prev) => prev.filter((i) => i.beatId !== beatId));
   }
 
+  function toggleFavorite(beatId) {
+    setFavorites((prev) => {
+      const next = prev.includes(beatId)
+        ? prev.filter((id) => id !== beatId)
+        : [...prev, beatId];
+      saveFavorites(next);
+      return next;
+    });
+  }
+
   function handleAuth({ token, user }) {
     setToken(token);
     setUser(user);
@@ -127,6 +166,10 @@ export default function Layout() {
     setUser(null);
   }
 
+  const recentlyPlayed = recentIds
+    .map((id) => beats.find((b) => b.id === id))
+    .filter(Boolean);
+
   const context = {
     beats,
     status,
@@ -134,7 +177,13 @@ export default function Layout() {
     isPlaying,
     togglePlay,
     openLicense: setModalSlug,
-    cart
+    cart,
+    user,
+    refreshBeats,
+    favorites,
+    toggleFavorite,
+    recentlyPlayed,
+    openAuth: () => setAuthOpen(true)
   };
 
   return (
@@ -147,7 +196,11 @@ export default function Layout() {
         onLogout={handleLogout}
       />
 
-      <Outlet context={context} />
+      <div key={location.pathname} className="page-fade">
+        <Outlet context={context} />
+
+        
+      </div>
 
       <Footer />
 
@@ -182,16 +235,19 @@ export default function Layout() {
         onPrev={() => playOffset(-1)}
         onNext={() => playOffset(1)}
         onToggleRepeat={() => setRepeatOne((v) => !v)}
+        audioRef={audioRef}
       />
 
       <audio
         ref={audioRef}
+        crossOrigin="anonymous"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={(e) => setCurrent(e.target.currentTime)}
         onLoadedMetadata={(e) => setDuration(e.target.duration)}
         onEnded={handleEnded}
       />
+       <ScrollToTop />
     </div>
   );
 }
